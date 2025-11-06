@@ -79,6 +79,9 @@ class Program
                             case "D":
                                 DeleteExpense();
                                 break;
+                            case "E":
+                                EditExpense();
+                                break;
                         }
                     }
                     break;
@@ -137,7 +140,7 @@ class Program
             
             if(validInputs.Contains(userInput.ToUpper())) return userInput.ToUpper();
             
-            Printer.WriteLineColor($"Invalid input: ", ConsoleColor.Red);
+            Printer.WriteLineColor($"Invalid input!", ConsoleColor.Red);
         }
     }
 
@@ -172,7 +175,7 @@ class Program
         }
     }
 
-    static decimal GetNumericInput(string prompt, bool required=true, string optionalHint = "Leave empty for default")
+    static decimal? GetNumericInput(string prompt, bool required=true, string optionalHint = "Leave empty for default")
     {
         while (true)
         {
@@ -201,7 +204,117 @@ class Program
                 }
                 else
                 {
+                    if (string.IsNullOrEmpty(userInput)) return null;
                     return decimal.Parse(userInput);
+                }
+            }
+            catch (Exception e)
+            {
+                Printer.PrintError(e.Message);
+            }
+        }
+    }
+
+    static DateTime? GetDateInput(string prompt, bool required=true, string optionalHint = "Leave empty for default")
+    {
+        while (true)
+        {
+            Printer.WriteColor($"{prompt}", PromptColor);
+
+            if (!required)
+            {
+                Printer.WriteColor($" ({optionalHint})", PromptColor);
+            }
+            
+            Printer.WriteColor(": ",  PromptColor);
+
+            try
+            {
+
+                string userInput = Console.ReadLine() ?? "";
+
+                if (required)
+                {
+                    if (!string.IsNullOrEmpty(userInput))
+                    {
+                        return DateTime.Parse(userInput);
+                    }
+
+                    Printer.PrintError("Input cannot be empty!");
+                }
+                else
+                {
+                    if (string.IsNullOrEmpty(userInput))
+                    {
+                        return null;
+                    }
+                    return DateTime.Parse(userInput);
+                }
+            }
+            catch (Exception e)
+            {
+                Printer.PrintError(e.Message);
+            }
+        }
+    }
+    
+    static ExpenseCategory? SelectCategory(string prompt, bool required = true, string optionalHint = "Leave empty for default")
+    {
+        ExpenseCategory[] categories = BudgetManager.GetCategories();
+        string[] validCategories;
+        if (required)
+        {
+            validCategories = new string[categories.Length];
+        }
+        else
+        {
+            validCategories = new string[categories.Length + 1];
+        }
+        
+        Printer.WriteLineColor("Categories:", PromptColor);
+        
+        // Print categories
+        for (int i = 0; i < categories.Length; i++)
+        {
+            Printer.WriteColor($"{i + 1}. ", ListKeyColor);
+            Printer.WriteLineColor(categories[i].Name, categories[i].Color);
+            
+            validCategories[i] = (i + 1).ToString();
+        }
+
+        if (!required)
+        {
+            validCategories[validCategories.Length - 1] = "";
+        }
+        
+        while (true)
+        {
+            Printer.WriteColor($"{prompt}", PromptColor);
+
+            if (!required)
+            {
+                Printer.WriteColor($" ({optionalHint})", PromptColor);
+            }
+            
+            Printer.WriteColor(": ",  PromptColor);
+            
+            try
+            {
+                string categoryId = GetValidUserInput("Enter category", validCategories);
+                
+                if (required)
+                {
+                    if (!string.IsNullOrEmpty(categoryId))
+                    {
+                        return categories[int.Parse(categoryId) - 1];
+                    }
+
+                    Printer.PrintError("Input cannot be empty!");
+                }
+                else
+                {
+                    if (string.IsNullOrEmpty(categoryId)) return null;
+                    return categories[int.Parse(categoryId) - 1];
                 }
             }
             catch (Exception e)
@@ -215,36 +328,22 @@ class Program
     {
         Console.Clear();
         Printer.PrintBanner("New Expense", HeaderColor);
-        string expenseName = GetUserInput("Enter expense name");
-        string expenseDescription = GetUserInput("Enter expense description", false);
-        decimal amount = GetNumericInput("Enter amount");
-        string date = GetUserInput("Enter expense date", false, "Leave blank for today");
+        string? expenseName = GetUserInput("Enter expense name");
+        string? expenseDescription = GetUserInput("Enter expense description", false);
+        decimal? amount = GetNumericInput("Enter amount");
+        DateTime? date = GetDateInput("Enter expense date", false, "Leave blank for today");
 
         // Set date to today if empty
-        if (string.IsNullOrEmpty(date))
+        if (!date.HasValue)
         {
-            date = DateTime.Now.ToString("dd/MM/yyyy");
+            date = DateTime.Now;
         }
         
-        ExpenseCategory[] categories = BudgetManager.GetCategories();
-        string[] validCategories = new string[categories.Length];
-        
-        Printer.WriteLineColor("Categories:", PromptColor);
-        
-        // Print categories
-        for (int i = 0; i < categories.Length; i++)
-        {
-            Printer.WriteColor($"{i + 1}. ", ListKeyColor);
-            Printer.WriteLineColor(categories[i].Name, categories[i].Color);
-            
-            validCategories[i] = (i + 1).ToString();
-        }
-
         Console.WriteLine();
 
-        int selectedCategory = int.Parse(GetValidUserInput("Enter category", validCategories));
+        ExpenseCategory? selectedCategory = SelectCategory("Enter category:");
         
-        bool success = BudgetManager.AddExpense(expenseName, expenseDescription, amount, DateTime.Parse(date), categories[selectedCategory - 1]);
+        bool success = BudgetManager.AddExpense(expenseName, expenseDescription, amount.Value, date.Value, selectedCategory);
 
         _statusMessage = success ? "Expense added successfully!" : "Expense could not be added!";
     }
@@ -253,7 +352,7 @@ class Program
     {
         Console.Clear();
         Printer.PrintBanner("All Expenses", HeaderColor);
-        Expense[] expenses = BudgetManager.GetExpenses();
+        Expense[] expenses = BudgetManager.GetAllExpenses();
 
         if (expenses.Length == 0)
         {
@@ -292,13 +391,10 @@ class Program
         Printer.WriteLineColor("Enter any key to return", PromptColor);
         Console.ReadKey();
     }
-    
-    static void DeleteExpense()
+
+    static int GetExpenseId()
     {
-        Console.Clear();
-        Printer.PrintBanner("Delete Expense", HeaderColor);
-        
-        Expense[] expenses = BudgetManager.GetExpenses();
+        Expense[] expenses = BudgetManager.GetAllExpenses();
         int size = expenses.Length;
         string[] validInputs = new string[size + 1];
         
@@ -313,9 +409,74 @@ class Program
 
         if (userInput != "EXIT")
         {
-            bool success = BudgetManager.DeleteExpense(int.Parse(userInput));
+            return int.Parse(userInput);
+        }
+
+        return -1;
+    }
+    
+    static void DeleteExpense()
+    {
+        Console.Clear();
+        Printer.PrintBanner("Delete Expense", HeaderColor);
+
+        if (BudgetManager.GetAllExpenses().Length == 0)
+        {
+            Printer.WriteLineColor("No expenses found!\n", HeaderColor);
             
-            _statusMessage = success ? "Expense deleted successfully!" : "Expense could not be deleted!";
+            Printer.WriteLineColor("Enter any key to return", PromptColor);
+            Console.ReadKey();
+        }
+        else
+        {
+            int expenseId = GetExpenseId();
+            
+            if (expenseId != -1)
+            {
+                string confirmation = GetValidUserInput("Are you sure you wish to delete this? (Y/N)", new[] { "Y", "N" });
+
+                if (confirmation == "Y")
+                {
+                    bool success = BudgetManager.DeleteExpense(expenseId);
+                
+                    _statusMessage = success ? "Expense deleted successfully!" : "Expense could not be deleted!";
+                }
+                else
+                {
+                    _statusMessage = "Nothing deleted.";
+                }
+            }
+        }
+    }
+
+    static void EditExpense()
+    {
+        Console.Clear();
+        Printer.PrintBanner("Edit Expense", HeaderColor);
+        
+        if (BudgetManager.GetAllExpenses().Length == 0)
+        {
+            Printer.WriteLineColor("No expenses found!\n", HeaderColor);
+            
+            Printer.WriteLineColor("Enter any key to return", PromptColor);
+            Console.ReadKey();
+        }
+        else
+        {
+            int expenseId =  GetExpenseId();
+
+            if (expenseId != -1)
+            {
+                string? name = GetUserInput("Enter new name", false);
+                string? description = GetUserInput("Enter new description", false);
+                DateTime? date = GetDateInput("Enter new date", false);
+                decimal? amount = GetNumericInput("Enter new amount", false);
+                ExpenseCategory? category = SelectCategory("Select new category", false);
+                
+                bool success = BudgetManager.EditExpense(expenseId, name, description, amount, date, category);
+                
+                _statusMessage =  success ?  "Expense edited successfully!" : "Expense could not be edited!";
+            }
         }
     }
 }

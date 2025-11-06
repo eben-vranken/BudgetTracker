@@ -20,10 +20,39 @@ public class Expense
     }
 
     // Gets
-    public int Id => _id;
-    public string Name => _name;
-    public string Description => _description;
-    public decimal Amount => _amount;
-    public DateTime Date => _date;
-    public ExpenseCategory Category => _category;
+    public int Id
+    {
+        get => _id;
+        set => _id = value;
+    }
+
+    public string Name
+    {
+        get => _name;
+        set => _name = value;
+    }
+
+    public string Description
+    {
+        get => _description;
+        set => _description = value;
+    }
+
+    public decimal Amount
+    {
+        get => _amount;
+        set => _amount = value;
+    }
+
+    public DateTime Date
+    {
+        get => _date;
+        set => _date = value;
+    }
+
+    public ExpenseCategory Category
+    {
+        get => _category;
+        set => _category = value;
+    }
 }

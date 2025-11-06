@@ -103,9 +103,14 @@ public class BudgetManager
         }
     }
 
-    public Expense[] GetExpenses()
+    public Expense[] GetAllExpenses()
     {
         return _expenses.ToArray();
+    }
+
+    public Expense? GetSpecificExpense(int expenseId)
+    {
+        return _expenses.FirstOrDefault(e => e.Id == expenseId);
     }
 
     public ExpenseCategory[] GetCategories()
@@ -117,14 +122,66 @@ public class BudgetManager
     {
         try
         {
-            _expenses.Remove(_expenses.FirstOrDefault(e => e.Id == id));
-            SaveData();
-            return true;
+            var expense = _expenses.FirstOrDefault(e => e.Id == id);
+            if (expense != null)
+            {
+                _expenses.Remove(expense);
+                SaveData();
+                return true;
+            }
+            return false;
         }
         catch (Exception e)
         {
             _printer.PrintError(e.Message);
             return false;
         }
+    }
+
+    public bool EditExpense(int id, string? name, string? description, decimal? amount, DateTime? date,
+        ExpenseCategory? category)
+    {
+        Expense expense = GetSpecificExpense(id);
+
+        if (expense != null)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(name))
+                {
+                    expense.Name = name;
+                }
+
+                if (!string.IsNullOrEmpty(description))
+                {
+                    expense.Description = description;
+                }
+
+                if (amount.HasValue)
+                {
+                    expense.Amount = amount.Value;
+                }
+
+                if (date.HasValue)
+                {
+                    expense.Date = date.Value;
+                }
+
+                if (category != null)
+                {
+                    expense.Category = category;
+                }
+                
+                SaveData();
+                return true;
+            }
+            catch (Exception e)
+            {
+                _printer.PrintError(e.Message);
+                return false;
+            }
+        }
+        
+        return false;
     }
 }
