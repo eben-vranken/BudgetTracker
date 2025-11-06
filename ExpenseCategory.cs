@@ -2,12 +2,17 @@ namespace BudgetTracker;
 
 public class ExpenseCategory
 {
-    private string _name;
-    private string _description;
+    public string Name { get; set; }
+    public string Description { get; set; }
 
-    public ExpenseCategory(string name, string description)
+    public ConsoleColor Color { get; set; }
+    
+    public ExpenseCategory() { }
+
+    public ExpenseCategory(string name, string description, ConsoleColor color)
     {
-        _name = name;
-        _description = description;
+        Name = name;
+        Description = description;
+        Color = color;
     }
 }
