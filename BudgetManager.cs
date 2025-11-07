@@ -16,7 +16,7 @@ public class BudgetManager
         LoadData();
     }
     
-    public void LoadData()
+    private void LoadData()
     {
         try
         {
@@ -65,7 +65,7 @@ public class BudgetManager
         }
     }
 
-    public void SaveData()
+    private void SaveData()
     {
         try
         {
@@ -141,7 +141,7 @@ public class BudgetManager
     public bool EditExpense(int id, string? name, string? description, decimal? amount, DateTime? date,
         ExpenseCategory? category)
     {
-        Expense expense = GetSpecificExpense(id);
+        Expense? expense = GetSpecificExpense(id);
 
         if (expense != null)
         {

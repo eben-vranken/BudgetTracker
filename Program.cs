@@ -328,8 +328,8 @@ class Program
     {
         Console.Clear();
         Printer.PrintBanner("New Expense", HeaderColor);
-        string? expenseName = GetUserInput("Enter expense name");
-        string? expenseDescription = GetUserInput("Enter expense description", false);
+        string expenseName = GetUserInput("Enter expense name");
+        string expenseDescription = GetUserInput("Enter expense description", false);
         decimal? amount = GetNumericInput("Enter amount");
         DateTime? date = GetDateInput("Enter expense date", false, "Leave blank for today");
 
@@ -467,8 +467,8 @@ class Program
 
             if (expenseId != -1)
             {
-                string? name = GetUserInput("Enter new name", false);
-                string? description = GetUserInput("Enter new description", false);
+                string name = GetUserInput("Enter new name", false);
+                string description = GetUserInput("Enter new description", false);
                 DateTime? date = GetDateInput("Enter new date", false);
                 decimal? amount = GetNumericInput("Enter new amount", false);
                 ExpenseCategory? category = SelectCategory("Select new category", false);
